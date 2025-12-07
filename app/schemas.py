@@ -1,15 +1,18 @@
+import hashlib
 from datetime import datetime
 from enum import Enum
 
 from pydantic import BaseModel, Field
 
-from app.config import link_template
+from app.config import link_template, salt
 from app.crypto import decrypt_data, encrypt_data
+from loguru import logger
 
 
 class LinkType(Enum):
     EVENT = "event"
     USER = "user"
+    MAIL = "mail"
 
 
 class MyBaseModel(BaseModel):
@@ -28,18 +31,24 @@ class Mark(BaseModel):
     status: str  # статус отметки
 
 
-class Mail(BaseModel):
-    id: int
-    sender: str  # телеграм id отправителя
-    recipient: str  # телеграм id получателя
-    timestamp: str  # время отправки
-    status: str  # статус письма
-
-
 class Building(Enum):
     POKROVKA = "Покровский бульвар, 11"
     MYASO = "Мясницкая, 20"
     BASMAN = "Старая Басманная улица, 21/4"
+
+
+class Mail(BaseModel):
+    sender: str  # телеграм id отправителя
+    send_building: Building  # строение отправки
+    recipient: str  # корпоративная почта получателя
+    timestamp: datetime  # время отправки
+
+    def generate_number(self, mail_id: int, salt: str = salt):
+        # counter - порядковый номер письма (можно из БД)
+        # Но хешируем, чтобы не был предсказуемым
+        hash_obj = hashlib.sha256(f"{mail_id}_{counter}_{salt}".encode())
+        hash_int = int(hash_obj.hexdigest(), 16)
+        return f"{hash_int % 10000:04d}"
 
 
 class Event(MyBaseModel):
@@ -62,5 +71,6 @@ class User(MyBaseModel):
 
 
 def typed_decrypt_data(encrypted_data: str) -> tuple[LinkType, int]:
+    logger.debug(f"Decrypting data: {encrypted_data}")
     decrypted_data = decrypt_data(encrypted_data).split("_")
     return LinkType(decrypted_data[0]), int(decrypted_data[1])

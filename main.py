@@ -3,6 +3,7 @@ from app.user import get_user
 from app.events import get_event
 
 user = User(id="1", name="John Doe", email="john.doe@example.com", phone="1234567890")
+print(user.link())
 user_link = user.link().split("?start=")[1]
 print(user_link)
 
