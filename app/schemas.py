@@ -74,30 +74,30 @@ class Mail(BaseModel):
 
         # Дополнительная непредсказуемость через XOR (тоже биективно)
         xor_key = (
-            int(hashlib.sha256(f"{salt}_xor".encode()).hexdigest()[:8], 16) % 1000000
+            int(hashlib.sha256(f"{salt}_xor".encode()).hexdigest()[:8], 16) % prime
         )
         number = number ^ xor_key
 
-        return f"{number:06d}"
+        return number
 
     @staticmethod
     def get_counter_from_number(number: str, salt: str = salt) -> int:
         """
-        Обратное преобразование: из номера получаем counter.
+        Обратное преобразование: из номера получаем counter (ID письма).
 
         Args:
-            number: Шестизначный номер (строка)
+            number: Номер письма (строка)
             salt: Соль (должна совпадать с той, что использовалась при генерации)
 
         Returns:
-            counter - порядковый номер письма
+            counter - ID письма в БД
         """
         prime = 999983
         number_int = int(number)
 
         # Шаг 1: Убираем XOR (XOR обратим сам по себе)
         xor_key = (
-            int(hashlib.sha256(f"{salt}_xor".encode()).hexdigest()[:8], 16) % 1000000
+            int(hashlib.sha256(f"{salt}_xor".encode()).hexdigest()[:8], 16) % prime
         )
         number_int = number_int ^ xor_key
 

@@ -22,7 +22,7 @@ class MailStates(StatesGroup):
     waiting_for_email = State()
 
 
-async def save_mail_to_db(mail: Mail) -> tuple[int, str]:
+async def save_mail_to_db(mail: Mail) -> tuple[int, int]:
     from app.database import MailDB, get_session
 
     session = get_session()
@@ -40,14 +40,14 @@ async def save_mail_to_db(mail: Mail) -> tuple[int, str]:
         session.refresh(mail_db)
 
         number = mail.generate_number(mail_db.id)
-        mail_db.number = int(number)
+        mail_db.number = number
         session.commit()
 
         return mail_db.id, number
     except Exception as e:
         logger.error(f"Ошибка при сохранении письма: {e}")
         session.rollback()
-        return 0, ""
+        return 0, 0
     finally:
         session.close()
 
